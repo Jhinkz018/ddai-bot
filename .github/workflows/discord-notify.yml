@@ -1,21 +1,23 @@
-name: GitHub → Discord Notification
+name: GitHub → Discord Notify Bot
 
 on:
   push:
-  pull_request:
-  issues:
-  watch:
-  fork:
-  release:
+    branches:
+      - main  # Or replace with dev/staging if needed
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send notification to Discord
-        uses: Ilshidur/action-discord@master
-        with:
-          args: |
-            🚀 `${{ github.actor }}` triggered `${{ github.event_name }}` on `${{ github.repository }}`!
-        env:
-  DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Send Message to Discord with Role Ping
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+            "username": "GitHub Bot",
+            "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+            "content": "<@&1380297462853664918> 🚀 `${{ github.actor }}` just pushed to `${{ github.repository }}` on branch `${{ github.ref_name }}`!",
+            "allowed_mentions": {
+              "roles": ["1380297462853664918"]
+            }
+          }' \
+          https://discord.com/api/webhooks/1392378414526103593/0cCpbWiPo62o26qLAHZZGJsf0Sjlw0bJATqEJ55xurVcW5fDfS18QtKmU-GXIFkBPfCB
