@@ -18,4 +18,4 @@ jobs:
           args: |
             🚀 `${{ github.actor }}` triggered `${{ github.event_name }}` on `${{ github.repository }}`!
         env:
-          DISCORD_WEBHOOK: https://discord.com/api/webhooks/1392378414526103593/0cCpbWiPo62o26qLAHZZGJsf0Sjlw0bJATqEJ55xurVcW5fDfS18QtKmU-GXIFkBPfCB
+  DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
