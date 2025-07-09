@@ -23,22 +23,26 @@ jobs:
         env:
           WEBHOOK_URL: https://discord.com/api/webhooks/1392378414526103593/0cCpbWiPo62o26qLAHZZGJsf0Sjlw0bJATqEJ55xurVcW5fDfS18QtKmU-GXIFkBPfCB
         run: |
+          repo_name="${{ github.repository }}"
+          ref_name="${{ github.ref_name }}"
+          repo_url="https://github.com/${repo_name}/tree/${ref_name}"
           commits=""
+          
           for commit in $(jq -r '.commits[].id' "$GITHUB_EVENT_PATH"); do
             msg=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .message' "$GITHUB_EVENT_PATH")
             url=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .url' "$GITHUB_EVENT_PATH")
             author=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .author.name' "$GITHUB_EVENT_PATH")
             email=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .author.email' "$GITHUB_EVENT_PATH")
             short_sha=$(echo "$commit" | cut -c1-7)
-            commits="${commits}\\n[\\\`$short_sha\\\`]($url): $msg — \\\`$author <$email>\\\`"
+            commits="${commits}\\n[${short_sha}](${url}): ${msg} — \`${author} <${email}>\`"
           done
 
           payload=$(jq -n \
             --arg content "<@&1380297462853664918>" \
-            --arg title "📦 Push to `${{ github.repository }}`" \
-            --arg description "**${{ github.actor }}** pushed to [`${{ github.ref_name }}`](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }})" \
+            --arg title "📦 Push to ${repo_name}" \
+            --arg description "**${{ github.actor }}** pushed to [${repo_name}](${repo_url})" \
             --arg commits "$commits" \
-            --arg footer "GitHub · Branch: ${{ github.ref_name }} · ${{ steps.repo.outputs.visibility }}" \
+            --arg footer "GitHub · Branch: ${ref_name} · ${{ steps.repo.outputs.visibility }}" \
             --arg timestamp "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
             '{
               username: "GitHub Bot",
