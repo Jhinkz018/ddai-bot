@@ -34,8 +34,7 @@ jobs:
             author=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .author.name' "$GITHUB_EVENT_PATH")
             email=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .author.email' "$GITHUB_EVENT_PATH")
             short_sha=$(echo "$commit" | cut -c1-7)
-            commits="${commits}[${short_sha}](${url}): ${msg} — \`${author} <${email}>\`
-"
+            commits+="[${short_sha}](${url}): ${msg} — \`${author} <${email}>\`"$'\n'
           done
 
           payload=$(jq -n \
