@@ -1,0 +1,21 @@
+name: GitHub → Discord Notification
+
+on:
+  push:
+  pull_request:
+  issues:
+  watch:
+  fork:
+  release:
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send notification to Discord
+        uses: Ilshidur/action-discord@master
+        with:
+          args: |
+            🚀 `${{ github.actor }}` triggered `${{ github.event_name }}` on `${{ github.repository }}`!
+        env:
+          DISCORD_WEBHOOK: https://discord.com/api/webhooks/1392378414526103593/0cCpbWiPo62o26qLAHZZGJsf0Sjlw0bJATqEJ55xurVcW5fDfS18QtKmU-GXIFkBPfCB
