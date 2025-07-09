@@ -16,7 +16,7 @@ Automated tool for DDAI Depin
 - **Proxy Support**: Rotate through proxies for multi-account creation
 - **Detailed Logging**: Comprehensive activity logs with status indicators
 - **Account Storage**: Saves successful accounts for future use
-- **Captcha Solving Integration**: Multiple captcha solving services supported
+- **Captcha Solving Integration**: Multiple captcha solving services supportedws
 
 ## Checking System Architecture
 
