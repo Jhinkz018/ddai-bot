@@ -26,15 +26,16 @@ jobs:
           repo_name="${{ github.repository }}"
           ref_name="${{ github.ref_name }}"
           repo_url="https://github.com/${repo_name}/tree/${ref_name}"
+
           commits=""
-          
           for commit in $(jq -r '.commits[].id' "$GITHUB_EVENT_PATH"); do
             msg=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .message' "$GITHUB_EVENT_PATH")
             url=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .url' "$GITHUB_EVENT_PATH")
             author=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .author.name' "$GITHUB_EVENT_PATH")
             email=$(jq -r --arg id "$commit" '.commits[] | select(.id==$id) | .author.email' "$GITHUB_EVENT_PATH")
             short_sha=$(echo "$commit" | cut -c1-7)
-            commits="${commits}\\n[${short_sha}](${url}): ${msg} — \`${author} <${email}>\`"
+            commits="${commits}[${short_sha}](${url}): ${msg} — \`${author} <${email}>\`
+"
           done
 
           payload=$(jq -n \
