@@ -1,38 +1,135 @@
-name: GitHub → Discord Embed Bot
+name: GitHub → Discord Bot
 
 on:
   push:
-    branches:
-      - main
+  pull_request:
+    types: [opened]
+  issues:
+    types: [opened]
+  release:
+    types: [published]
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Embed to Discord
+      - name: Get Repository Visibility
+        id: repo
         run: |
+          visibility=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/repos/${{ github.repository }} | jq -r '.private')
+          if [ "$visibility" == "true" ]; then
+            echo "visibility=Private 🔒" >> $GITHUB_OUTPUT
+          else
+            echo "visibility=Public 🌐" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Handle Push Events (All Branches)
+        if: github.event_name == 'push'
+        run: |
+          commits=""
+          for commit in $(jq -r '.commits[].url' $GITHUB_EVENT_PATH); do
+            msg=$(jq -r --arg url "$commit" '.commits[] | select(.url==$url) | .message' $GITHUB_EVENT_PATH)
+            author=$(jq -r --arg url "$commit" '.commits[] | select(.url==$url) | .author.name' $GITHUB_EVENT_PATH)
+            email=$(jq -r --arg url "$commit" '.commits[] | select(.url==$url) | .author.email' $GITHUB_EVENT_PATH)
+            sha=$(jq -r --arg url "$commit" '.commits[] | select(.url==$url) | .id' $GITHUB_EVENT_PATH)
+            short_sha=${sha:0:7}
+            commits="$commits\n[`${short_sha}`]($commit): $msg — \`${author} <${email}>\`"
+          done
+
           curl -X POST -H "Content-Type: application/json" \
           -d '{
             "username": "GitHub Bot",
             "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
             "content": "<@&1380297462853664918>",
-            "embeds": [
-              {
-                "title": "Push to `${{ github.repository }}`",
-                "description": "**${{ github.actor }}** just pushed to [`main`](https://github.com/${{ github.repository }}/tree/main)",
-                "url": "https://github.com/${{ github.repository }}",
-                "color": 7506394,
-                "author": {
-                  "name": "${{ github.actor }}",
-                  "url": "https://github.com/${{ github.actor }}",
-                  "icon_url": "https://github.com/${{ github.actor }}.png"
-                },
-                "footer": {
-                  "text": "GitHub · Branch: main"
-                },
-                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
-              }
-            ],
+            "embeds": [{
+              "title": "📦 Push to `${{ github.repository }}`",
+              "description": "**${{ github.actor }}** pushed to [`${{ github.ref_name }}`](https://github.com/${{ github.repository }}/tree/${{ github.ref_name }})",
+              "fields": [
+                {
+                  "name": "Commits",
+                  "value": "'"${commits}"'"
+                }
+              ],
+              "color": 7506394,
+              "author": {
+                "name": "${{ github.actor }}",
+                "url": "https://github.com/${{ github.actor }}",
+                "icon_url": "https://github.com/${{ github.actor }}.png"
+              },
+              "footer": {
+                "text": "GitHub · Branch: ${{ github.ref_name }} · ${{ steps.repo.outputs.visibility }}"
+              },
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }],
+            "allowed_mentions": {
+              "roles": ["1380297462853664918"]
+            }
+          }' \
+          https://discord.com/api/webhooks/1392378414526103593/0cCpbWiPo62o26qLAHZZGJsf0Sjlw0bJATqEJ55xurVcW5fDfS18QtKmU-GXIFkBPfCB
+
+      - name: Handle PR Events
+        if: github.event_name == 'pull_request'
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+            "username": "GitHub Bot",
+            "avatar_url": "https://cdn-icons-png.flaticon.com/512/455/455705.png",
+            "content": "<@&1380297462853664918>",
+            "embeds": [{
+              "title": "🔀 Pull Request Opened",
+              "description": "**${{ github.actor }}** opened [PR #${{ github.event.pull_request.number }}](${{ github.event.pull_request.html_url }}):\n${{ github.event.pull_request.title }}",
+              "color": 3447003,
+              "footer": {
+                "text": "GitHub · ${{ steps.repo.outputs.visibility }}"
+              },
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }],
+            "allowed_mentions": {
+              "roles": ["1380297462853664918"]
+            }
+          }' \
+          https://discord.com/api/webhooks/1392378414526103593/0cCpbWiPo62o26qLAHZZGJsf0Sjlw0bJATqEJ55xurVcW5fDfS18QtKmU-GXIFkBPfCB
+
+      - name: Handle Issue Events
+        if: github.event_name == 'issues'
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+            "username": "GitHub Bot",
+            "avatar_url": "https://cdn-icons-png.flaticon.com/512/3566/3566110.png",
+            "content": "<@&1380297462853664918>",
+            "embeds": [{
+              "title": "🐞 New Issue Opened",
+              "description": "**${{ github.actor }}** opened [Issue #${{ github.event.issue.number }}](${{ github.event.issue.html_url }}):\n${{ github.event.issue.title }}",
+              "color": 15158332,
+              "footer": {
+                "text": "GitHub · ${{ steps.repo.outputs.visibility }}"
+              },
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }],
+            "allowed_mentions": {
+              "roles": ["1380297462853664918"]
+            }
+          }' \
+          https://discord.com/api/webhooks/1392378414526103593/0cCpbWiPo62o26qLAHZZGJsf0Sjlw0bJATqEJ55xurVcW5fDfS18QtKmU-GXIFkBPfCB
+
+      - name: Handle Release Events
+        if: github.event_name == 'release'
+        run: |
+          curl -X POST -H "Content-Type: application/json" \
+          -d '{
+            "username": "GitHub Bot",
+            "avatar_url": "https://cdn-icons-png.flaticon.com/512/1091/1091400.png",
+            "content": "<@&1380297462853664918>",
+            "embeds": [{
+              "title": "🚀 New Release: ${{ github.event.release.name }}",
+              "description": "A new release was published: [${{ github.event.release.tag_name }}](${{ github.event.release.html_url }})",
+              "color": 3066993,
+              "footer": {
+                "text": "GitHub · ${{ steps.repo.outputs.visibility }}"
+              },
+              "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+            }],
             "allowed_mentions": {
               "roles": ["1380297462853664918"]
             }
