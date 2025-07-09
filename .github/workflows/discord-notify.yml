@@ -1,21 +1,38 @@
-name: GitHub → Discord Notify Bot
+name: GitHub → Discord Embed Bot
 
 on:
   push:
     branches:
-      - main  # Or replace with dev/staging if needed
+      - main
 
 jobs:
   notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Send Message to Discord with Role Ping
+      - name: Send Embed to Discord
         run: |
           curl -X POST -H "Content-Type: application/json" \
           -d '{
             "username": "GitHub Bot",
             "avatar_url": "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-            "content": "<@&1380297462853664918> 🚀 `${{ github.actor }}` just pushed to `${{ github.repository }}` on branch `${{ github.ref_name }}`!",
+            "content": "<@&1380297462853664918>",
+            "embeds": [
+              {
+                "title": "Push to `${{ github.repository }}`",
+                "description": "**${{ github.actor }}** just pushed to [`main`](https://github.com/${{ github.repository }}/tree/main)",
+                "url": "https://github.com/${{ github.repository }}",
+                "color": 7506394,
+                "author": {
+                  "name": "${{ github.actor }}",
+                  "url": "https://github.com/${{ github.actor }}",
+                  "icon_url": "https://github.com/${{ github.actor }}.png"
+                },
+                "footer": {
+                  "text": "GitHub · Branch: main"
+                },
+                "timestamp": "'$(date -u +%Y-%m-%dT%H:%M:%SZ)'"
+              }
+            ],
             "allowed_mentions": {
               "roles": ["1380297462853664918"]
             }
