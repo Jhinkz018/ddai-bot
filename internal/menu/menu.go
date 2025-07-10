@@ -35,7 +35,7 @@ func (m *MenuHandler) ShowMainMenu(version string) {
 			m.RunReferralProgram()
 			m.showBanner(version)
 		case "2":
-			//m.RunAutoBot()
+			m.RunAutoBot()
 			m.showBanner(version)
 		case "3":
 			m.EditConfig()
