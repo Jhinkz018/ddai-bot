@@ -156,7 +156,7 @@ func (m *ddaiReferral) SingleProses() error {
 			continue
 		}
 
-		accessToken, err := m.loginAccount(username, password, token)
+		accessToken, err := m.loginAccount(email, password, token)
 		if err != nil {
 			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("%v", err), "warning")
 			return err
@@ -236,10 +236,10 @@ func (m *ddaiReferral) registerAccount(email string, username string, password s
 	return fmt.Errorf("registration failed: %v", errorMsg)
 }
 
-func (m *ddaiReferral) loginAccount(username string, password string, captcha string) (string, error) {
-	utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Logging in with username: %s", username), "process")
+func (m *ddaiReferral) loginAccount(email string, password string, captcha string) (string, error) {
+	utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Logging in with email: %s", email), "process")
 	payload := map[string]string{
-		"username":     username,
+		"email":        email,
 		"password":     password,
 		"captchaToken": captcha,
 	}

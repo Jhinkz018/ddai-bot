@@ -85,10 +85,10 @@ func (m *ddaiRunBot) SingleProses() error {
 	return fmt.Errorf("failed after %d attempts", retryCount)
 }
 
-func (m *ddaiRunBot) loginAccount(username string, password string, captcha string) (string, error) {
-	utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Logging in with username: %s", username), "process")
+func (m *ddaiRunBot) loginAccount(email string, password string, captcha string) (string, error) {
+	utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Logging in with email: %s", email), "process")
 	payload := map[string]string{
-		"username":     username,
+		"email":        email,
 		"password":     password,
 		"captchaToken": captcha,
 	}
