@@ -47,11 +47,18 @@ func (m *ddaiRunBot) SingleProses() error {
 			continue
 		}
 
+
 		if err := m.modelResponse(accessToken); err != nil {
 			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Model response failed: %v", err), "warning")
+
+		taskList, err := m.getUserTask(accessToken)
+		if err != nil {
+			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Failed to get tasks: %v", err), "warning")
+
 			time.Sleep(retryDelay)
 			continue
 		}
+
 
 		if err := m.onchainTrigger(accessToken); err != nil {
 			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Onchain trigger failed: %v", err), "warning")
@@ -60,6 +67,19 @@ func (m *ddaiRunBot) SingleProses() error {
 		}
 
 		utils.LogMessage(m.currentNum, m.total, "Successfully ran auto bot flow", "success")
+
+		allTasksSuccess := true
+		for _, task := range taskList {
+			if err := m.claimTask(accessToken, task); err != nil {
+				utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Failed to claim task %s: %v", task["name"], err), "warning")
+				allTasksSuccess = false
+			}
+			time.Sleep(1 * time.Second)
+		}
+
+		anyTaskSuccess := len(taskList) > 0 && (allTasksSuccess || !allTasksSuccess)
+		utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Tasks found: %d, Tasks claimed: %v", len(taskList), anyTaskSuccess), "info")
+
 		return nil
 	}
 
@@ -177,6 +197,7 @@ func (m *ddaiRunBot) claimTask(accessToken string, task map[string]string) error
 	return nil
 }
 
+
 type genericResponse struct {
 	Status string                 `json:"status"`
 	Error  map[string]interface{} `json:"error"`
@@ -237,3 +258,4 @@ func (m *ddaiRunBot) onchainTrigger(accessToken string) error {
 
 	return nil
 }
+
