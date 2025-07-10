@@ -47,9 +47,9 @@ func (m *ddaiRunBot) SingleProses() error {
 			continue
 		}
 
-
 		if err := m.modelResponse(accessToken); err != nil {
 			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Model response failed: %v", err), "warning")
+		}
 
 		taskList, err := m.getUserTask(accessToken)
 		if err != nil {
@@ -58,7 +58,6 @@ func (m *ddaiRunBot) SingleProses() error {
 			time.Sleep(retryDelay)
 			continue
 		}
-
 
 		if err := m.onchainTrigger(accessToken); err != nil {
 			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Onchain trigger failed: %v", err), "warning")
@@ -197,7 +196,6 @@ func (m *ddaiRunBot) claimTask(accessToken string, task map[string]string) error
 	return nil
 }
 
-
 type genericResponse struct {
 	Status string                 `json:"status"`
 	Error  map[string]interface{} `json:"error"`
@@ -258,4 +256,3 @@ func (m *ddaiRunBot) onchainTrigger(accessToken string) error {
 
 	return nil
 }
-
