@@ -130,7 +130,7 @@ The bot can also run tasks on previously created accounts. Place your accounts i
 email:password
 ```
 
-Then select "Run Accounts" from the menu to perform tasks with these existing accounts.
+From the main menu choose the **Auto Bot** option to run tasks for these existing accounts. The bot logs in to each account, fetches a bearer token, then issues the `modelResponse` and `onchainTrigger` API calls to farm rewards. You can run all accounts simultaneously using **Concurrent Mode** or one by one using **Queue Mode**.
 
 ## Troubleshooting
 

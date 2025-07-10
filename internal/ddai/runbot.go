@@ -47,12 +47,26 @@ func (m *ddaiRunBot) SingleProses() error {
 			continue
 		}
 
+
+		if err := m.modelResponse(accessToken); err != nil {
+			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Model response failed: %v", err), "warning")
+
 		taskList, err := m.getUserTask(accessToken)
 		if err != nil {
 			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Failed to get tasks: %v", err), "warning")
+
 			time.Sleep(retryDelay)
 			continue
 		}
+
+
+		if err := m.onchainTrigger(accessToken); err != nil {
+			utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Onchain trigger failed: %v", err), "warning")
+			time.Sleep(retryDelay)
+			continue
+		}
+
+		utils.LogMessage(m.currentNum, m.total, "Successfully ran auto bot flow", "success")
 
 		allTasksSuccess := true
 		for _, task := range taskList {
@@ -65,6 +79,7 @@ func (m *ddaiRunBot) SingleProses() error {
 
 		anyTaskSuccess := len(taskList) > 0 && (allTasksSuccess || !allTasksSuccess)
 		utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Tasks found: %d, Tasks claimed: %v", len(taskList), anyTaskSuccess), "info")
+
 		return nil
 	}
 
@@ -181,3 +196,66 @@ func (m *ddaiRunBot) claimTask(accessToken string, task map[string]string) error
 	utils.LogMessage(m.currentNum, m.total, fmt.Sprintf("Successfully claimed task: %s with rewards: %d requests", task["name"], result.Data.Rewards.Requests), "success")
 	return nil
 }
+
+
+type genericResponse struct {
+	Status string                 `json:"status"`
+	Error  map[string]interface{} `json:"error"`
+}
+
+func (m *ddaiRunBot) modelResponse(accessToken string) error {
+	headers := map[string]string{
+		"Authorization": "Bearer " + accessToken,
+	}
+
+	body, err := m.httpClient.MakeRequestWithBody("GET", "https://auth.ddai.space/modelResponse", nil, headers)
+	if err != nil {
+		return fmt.Errorf("modelResponse request failed: %v", err)
+	}
+
+	var resp genericResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return fmt.Errorf("failed to decode response: %v (body: %s)", err, string(body))
+	}
+
+	if resp.Status != "success" && resp.Status != "ok" {
+		msg := "unknown error"
+		if resp.Error != nil {
+			if m, ok := resp.Error["message"]; ok {
+				msg = fmt.Sprintf("%v", m)
+			}
+		}
+		return fmt.Errorf("modelResponse failed: %s", msg)
+	}
+
+	return nil
+}
+
+func (m *ddaiRunBot) onchainTrigger(accessToken string) error {
+	headers := map[string]string{
+		"Authorization": "Bearer " + accessToken,
+	}
+
+	body, err := m.httpClient.MakeRequestWithBody("POST", "https://auth.ddai.space/onchainTrigger", nil, headers)
+	if err != nil {
+		return fmt.Errorf("onchainTrigger request failed: %v", err)
+	}
+
+	var resp genericResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return fmt.Errorf("failed to decode response: %v (body: %s)", err, string(body))
+	}
+
+	if resp.Status != "success" && resp.Status != "ok" {
+		msg := "unknown error"
+		if resp.Error != nil {
+			if m, ok := resp.Error["message"]; ok {
+				msg = fmt.Sprintf("%v", m)
+			}
+		}
+		return fmt.Errorf("onchainTrigger failed: %s", msg)
+	}
+
+	return nil
+}
+
